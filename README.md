@@ -5,6 +5,7 @@ Combee is a proof of concept framework for safely integrating Large Language Mod
 **Table of Contents**
 - [Background](#background)
 - [Framework Description](#framework-description)
+- [Installation and Use](#installation-and-usage)
 
 ## Background
 
@@ -33,3 +34,5 @@ To install, just run:
 ```bash
 pip install -r requirements.txt
 ```
+
+This will install all the python dependencies for the project.  
