@@ -36,3 +36,9 @@ pip install -r requirements.txt
 ```
 
 This will install all the python dependencies for the project.  
+
+### System Usage
+
+Combee works by the user defining and describing all the sensors and systems the LLM will be connected to in a YAML file.  These descriptions should be in plain human understandable text, and will be passed to the LLM as a part of it's initial context for every question the user asks.  This will then be paired up with the output from those sensors and passed in as the full context for each question from the user.  
+
+Eventually
