@@ -25,3 +25,11 @@ The first unique part of this framework is that we support a multi-model environ
 ### API Abstraction
 
 The second big part of the framework is having each of the models interact with the other sensors and systems via API.  This does two main things: First it allows multiple models to communicate and listen to the same sensor or system, and two it allows hallucination problems to become bounded into more general invalid input problems.  This is because rather than checking if the open-ended question of did the model generate what the user wanted correctly, we instead just have to check and validate if the model generated the API call correctly.  In other words, we are turn what would normally be an open ended write your own answer question into a multiple choice one.  
+
+## Installation and Usage
+
+To install, just run: 
+
+```bash
+pip install -r requirements.txt
+```
