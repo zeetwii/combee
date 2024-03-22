@@ -41,4 +41,6 @@ This will install all the python dependencies for the project.
 
 Combee works by the user defining and describing all the sensors and systems the LLM will be connected to in a YAML file.  These descriptions should be in plain human understandable text, and will be passed to the LLM as a part of it's initial context for every question the user asks.  This will then be paired up with the output from those sensors and passed in as the full context for each question from the user.  
 
-Eventually
+Eventually we will be moving over to a two tiered approach, where the LLM is first given the static description of all sensors and systems, and asked which data sets it wants to retrieve to answer the question, and then a second time with that data from the sensor.  By separating it out and only pulling what data you need, we hope to be able to better reduce the size of the context when and if the user asks about historical data.  However, because we currently use message queues as our integration method, the system is only able to see live data and nothing historical, thus this change will be added when we switch to a more database like backend.  
+
+The robot in its current form is voice controlled, where the user pushes and holds the button on its head to record the audio that represents their request.  When they release the button the wav file is passed to OpenAI's Whisper API to transcribe from audio to text.  It is possible to run this locally, but because our example hardware is a Raspberry Pi 4, we use the cloud version for the faster response time.  
