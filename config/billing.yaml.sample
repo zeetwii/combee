@@ -1,0 +1,5 @@
+# List of all API keys needed for remote or billed per token models
+
+openai:
+  # from account
+  API_KEY: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
