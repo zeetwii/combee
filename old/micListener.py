@@ -209,31 +209,6 @@ class MicListener:
         
         print("press button to record")
         
-        """
-        
-        try:
-            sampleRate = int(self.deviceInfo['default_samplerate'])
-            with sf.SoundFile(file="request.wav", mode='w', samplerate=sampleRate, channels=1, subtype='PCM_16') as file:
-                with sd.InputStream(samplerate=sampleRate, channels=1, callback=self.callback):
-                    while True:
-                        if self.button.is_pressed:
-                            self.recordStatus = True
-                            file.write(self.queue.get())
-                        elif not self.button.is_pressed and self.recordStatus:
-                            self.recordStatus = False
-                            print("Finished recording")
-                            raise KeyboardInterrupt
-                        elif not self.queue.empty():
-                            #print("clearing queue")
-                            self.queue.get()
-                            
-                            
-        except KeyboardInterrupt:
-            print("Recording finished")
-        
-        """
-        
-        
         sampleRate = int(self.deviceInfo['default_samplerate'])
         with sf.SoundFile(file="request.wav", mode='w', samplerate=sampleRate, channels=1, subtype='PCM_16') as file:
             with sd.InputStream(samplerate=sampleRate, channels=1, callback=self.callback):
