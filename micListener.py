@@ -29,7 +29,7 @@ class MicListener:
         self.deviceInfo = sd.query_devices(kind='input')
         #print(str(self.deviceInfo))
 
-         # load config settings
+        # load config settings
         CFG = None  # global CFG settings
         with open("./configs/billing.yaml", "r") as ymlfile:
             CFG = yaml.safe_load(ymlfile)
