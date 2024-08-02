@@ -8,7 +8,7 @@ from openai import OpenAI # needed for calling OpenAI Audio API
 import yaml # needed for config
 import pika # needed to send messages out via RabbitMQ
 import threading # needed for multi threads
-from gpiozero import Button # needed for button control
+#from gpiozero import Button # needed for button control
 
 import pygame # needed for audio
 pygame.init()
@@ -28,10 +28,10 @@ class MicListener:
         Initialization method
         """
         
-        self.motorController = MotorController()
+        #self.motorController = MotorController()
         
         self.recordStatus = False
-        self.button = Button(1)
+        #self.button = Button(1)
 
         self.detectedObjects = []
 
@@ -48,24 +48,24 @@ class MicListener:
         self.client = OpenAI(api_key=CFG["openai"]["API_KEY"])
 
         # setup RabbitMQ connection
-        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-        self.channel = connection.channel()
-        self.channel.queue_declare(queue='mtr')
+        #connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        #self.channel = connection.channel()
+        #self.channel.queue_declare(queue='mtr')
 
         #creates exchanges if they don't already exist
-        self.channel.exchange_declare(exchange='cv', exchange_type='fanout')
+        #self.channel.exchange_declare(exchange='cv', exchange_type='fanout')
         #self.channel.exchange_declare(exchange='rsp', exchange_type='fanout')
         #self.channel.exchange_declare(exchange='imu', exchange_type='fanout')
 
 
-        self.channel.basic_consume(queue='cv', on_message_callback=self.cvCallback, auto_ack=True)
+        #self.channel.basic_consume(queue='cv', on_message_callback=self.cvCallback, auto_ack=True)
         #self.channel.basic_consume(queue='rsp', on_message_callback=self.rspCallback, auto_ack=True)
         #self.channel.basic_consume(queue='imu', on_message_callback=self.imuCallback, auto_ack=True)
-        self.rabbitThread = threading.Thread(target=self.channel.start_consuming, daemon=True)
-        self.rabbitThread.start()
+        #self.rabbitThread = threading.Thread(target=self.channel.start_consuming, daemon=True)
+        #self.rabbitThread.start()
         
-        self.motorThread = threading.Thread(target=self.motorController.moveIt, daemon=True)
-        self.motorThread.start()
+        #self.motorThread = threading.Thread(target=self.motorController.moveIt, daemon=True)
+        #self.motorThread.start()
 
 
     def cvCallback(self, ch, method, properties, body):
@@ -234,9 +234,9 @@ if __name__ == "__main__":
     while True:
 
         #input("Press any key to start transcribing: ")
-        #micListener.computerListener()
-        micListener.piListener()
+        micListener.computerListener()
+        #micListener.piListener()
         text = micListener.transcribeAudio()
         #micListener.publishText(text=text)
         print(text)
-        micListener.callLLM(text)
+        #micListener.callLLM(text)

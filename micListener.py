@@ -30,12 +30,11 @@ class MicListener:
         #print(str(self.deviceInfo))
 
         # load config settings
-        CFG = None  # global CFG settings
         with open("./configs/billing.yaml", "r") as ymlfile:
-            CFG = yaml.safe_load(ymlfile)
+            config = yaml.safe_load(ymlfile)
 
         # load openAI keys into client
-        self.client = OpenAI(api_key=CFG["openai"]["API_KEY"])
+        self.client = OpenAI(api_key=config["openai"]["API_KEY"])
 
         # TODO set up rabbitMQ fanout
     

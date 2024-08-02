@@ -13,13 +13,27 @@ class LLMProcessor:
         Initialization method
         """
 
+        # String that will contain all the detected objects and their positions relative to us
+        self.detectedObjects = ""
+
         # load config settings
-        CFG = None  # global CFG settings
         with open("./configs/billing.yaml", "r") as ymlfile:
-            CFG = yaml.safe_load(ymlfile)
+            config = yaml.safe_load(ymlfile)
 
         # load openAI keys into client
-        self.client = OpenAI(api_key=CFG["openai"]["API_KEY"])
+        self.client = OpenAI(api_key=config["openai"]["API_KEY"])
+
+        # load context settings
+        with open("./configs/context.yaml", "r") as ctxfile:
+            context = yaml.safe_load(ctxfile)
+
+        self.personality = context["llm"]["PERSONALITY"]
+        self.moveDes = context["llm"]["MOVE_DESCRIPTION"]
+        self.lookDes = context["llm"]["CAMERA_DESCRIPTION"]
+        self.waitDes = context["llm"]["WAIT_DESCRIPTION"]
+        self.textDes = context["llm"]["TEXT_DESCRIPTION"]
+        self.llmDes = context["llm"]["LLM_DESCRIPTION"]
+
 
         # set up RabbitMQ
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -68,13 +82,14 @@ class LLMProcessor:
         completion = self.client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are ComBee, a robot connected to multiple sensors and motors that is able to talk to users."},
-            {"role": "system", "content": "You are connected to a wheeled motorized chassis that is capable of moving forwards, backwards, left, and right."},
-            {"role": "system", "content": f"You are connected to an IMU sensor that currently has no readings"},
-            #{"role": "system", "content": f"You are connected to a Web Cam capable of object detection that sees the current objects: {str(self.detectedObjects)}"},
-            {"role": "system", "content": "If the user wants you to move or navigate, return all movement commands in the format of [Forward/Reverse/Turn, angle (in degrees), time (in seconds)] Only return data in this format and always use the brackets with each command on a new line.  For example a command to turn left would look like [Turn, -90, 0] "},
-            {"role": "system", "content": "If the user wants you to respond back to them with either an answer or comment, return that command in the format of [Text, Response] for example if the user asked you the prompt of what is your name, you would reply with [Text, My name is ComBee]."},
-            {"role": "system", "content": "You may combine and respond with both movement and response commands, but each must be on a new line."},
+            {"role": "system", "content": f"{str(self.personality)}"},
+            {"role": "system", "content": f"{str(self.moveDes)}"},
+            {"role": "system", "content": f"{str(self.lookDes)}"},
+            {"role": "system", "content": f"The webcam currently sees the following objects: {str(self.detectedObjects)}"},
+            {"role": "system", "content": f"{str(self.waitDes)}"},
+            {"role": "system", "content": f"{str(self.textDes)}"},
+            {"role": "system", "content": f"{str(self.llmDes)}"},
+            {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands"},
             {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
             {"role": "user", "content": f"{str(question)}"}
         ]
@@ -82,6 +97,8 @@ class LLMProcessor:
 
         output = str(completion.choices[0].message.content)
         print(output)
+
+        '''
         
         lines = output.split("]")
 
@@ -115,6 +132,7 @@ class LLMProcessor:
                 self.motorController.processMessage(message)
             else:
                 print("catch all")
+        '''
 
 if __name__ == '__main__':
     llmP = LLMProcessor()
