@@ -36,7 +36,11 @@ class MicListener:
         # load openAI keys into client
         self.client = OpenAI(api_key=config["openai"]["API_KEY"])
 
-        # TODO set up rabbitMQ fanout
+        # set up RabbitMQ
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        self.channel = self.connection.channel()
+
+        self.channel.queue_declare(queue='userInput') 
     
     def callback(self, indata, frames, time, status):
         """This is called (from a separate thread) for each audio block."""
@@ -78,6 +82,16 @@ class MicListener:
                     elif not self.queue.empty():
                             #print("clearing queue")
                             self.queue.get()
+    
+    def publishText(self, text):
+        """
+        pushes text out to the message queue
+
+        Args:
+            text (str): the text to add to the message queue
+        """
+
+        self.channel.basic_publish(exchange='', routing_key='userInput', body=text)
         
 if __name__ == "__main__":
     print("Running Mic Listener")
@@ -88,6 +102,6 @@ if __name__ == "__main__":
 
         micListener.piListener()
         text = micListener.transcribeAudio()
-        #micListener.publishText(text=text)
-        print(text)
+        micListener.publishText(text=text)
+        #print(text)
         #micListener.callLLM(text)

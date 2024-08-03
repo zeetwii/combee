@@ -7,6 +7,7 @@ connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 
 channel.queue_declare(queue='userInput')
+channel.queue_declare(queue='audioOut')
 
 print("Running text input script.  Type out commands as if they had been parsed by audio.  ")
 
@@ -17,6 +18,7 @@ while True:
         userText = input("\nEnter what you want to say to the robot: \n")
 
         channel.basic_publish(exchange='', routing_key='userInput', body=userText)
+        #channel.basic_publish(exchange='', routing_key='audioOut', body=userText)
 
 
     except KeyboardInterrupt:
