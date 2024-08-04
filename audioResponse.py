@@ -27,8 +27,8 @@ class AudioResponse:
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(queue='audioOut')
-        self.channel.basic_consume(queue='audioOut', on_message_callback=self.audioCallback, auto_ack=True) 
+        self.channel.queue_declare(queue='audioInput')
+        self.channel.basic_consume(queue='audioInput', on_message_callback=self.audioCallback, auto_ack=True) 
 
     def startListening(self):
         """

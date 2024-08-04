@@ -40,10 +40,11 @@ class LLMProcessor:
         self.channel = self.connection.channel()
 
         # Declare all the queues we will listen to 
-        self.channel.queue_declare(queue='userInput') 
-        self.channel.queue_declare(queue='cvInput')
-        self.channel.queue_declare(queue='imuInput')
-        self.channel.queue_declare(queue='audioOut')
+        self.channel.queue_declare(queue='userOutput') 
+        self.channel.queue_declare(queue='cameraOutput')
+        self.channel.queue_declare(queue='cameraInput')
+        #self.channel.queue_declare(queue='imuOutput')
+        self.channel.queue_declare(queue='audioInput')
 
         self.channel.basic_consume(queue='userInput', on_message_callback=self.userCallback, auto_ack=True)
 

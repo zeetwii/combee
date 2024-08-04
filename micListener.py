@@ -26,6 +26,8 @@ class MicListener:
         self.button = Button("BOARD12")
 
         self.queue = queue.Queue()
+
+        # setup microphone
         self.deviceInfo = sd.query_devices(kind='input')
         #print(str(self.deviceInfo))
 
@@ -40,7 +42,7 @@ class MicListener:
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(queue='userInput') 
+        self.channel.queue_declare(queue='userOutput') 
     
     def callback(self, indata, frames, time, status):
         """This is called (from a separate thread) for each audio block."""
@@ -91,7 +93,7 @@ class MicListener:
             text (str): the text to add to the message queue
         """
 
-        self.channel.basic_publish(exchange='', routing_key='userInput', body=text)
+        self.channel.basic_publish(exchange='', routing_key='userOutput', body=text)
         
 if __name__ == "__main__":
     print("Running Mic Listener")

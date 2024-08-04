@@ -6,8 +6,8 @@ import pika # needed to send messages out via RabbitMQ
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 
-channel.queue_declare(queue='userInput')
-channel.queue_declare(queue='audioOut')
+channel.queue_declare(queue='userOutput')
+channel.queue_declare(queue='audioInput')
 
 print("Running text input script.  Type out commands as if they had been parsed by audio.  ")
 
@@ -17,8 +17,8 @@ while True:
 
         userText = input("\nEnter what you want to say to the robot: \n")
 
-        channel.basic_publish(exchange='', routing_key='userInput', body=userText)
-        #channel.basic_publish(exchange='', routing_key='audioOut', body=userText)
+        channel.basic_publish(exchange='', routing_key='userOutput', body=userText)
+        #channel.basic_publish(exchange='', routing_key='audioInput', body=userText)
 
 
     except KeyboardInterrupt:
