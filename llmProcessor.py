@@ -1,6 +1,7 @@
 from openai import OpenAI # needed for calling OpenAI Audio API
 import yaml # needed for config
 import pika # needed to send messages out via RabbitMQ
+import time # needed for sleep
 
 
 class LLMProcessor:
@@ -39,15 +40,29 @@ class LLMProcessor:
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         self.channel = self.connection.channel()
 
-        # Declare all the queues we will listen to 
+        # Declare all the queues we will listen to or use
         self.channel.queue_declare(queue='userOutput') 
         self.channel.queue_declare(queue='cameraOutput')
         self.channel.queue_declare(queue='cameraInput')
-        #self.channel.queue_declare(queue='imuOutput')
         self.channel.queue_declare(queue='audioInput')
+        self.channel.queue_declare(queue='moveInput')
 
-        self.channel.basic_consume(queue='userInput', on_message_callback=self.userCallback, auto_ack=True)
+        self.channel.basic_consume(queue='userOutput', on_message_callback=self.userCallback, auto_ack=True)
+        self.channel.basic_consume(queue='cameraOutput', on_message_callback=self.cameraCallback, auto_ack=True)
 
+    def cameraCallback(self, ch, method, properties, body):
+        """
+        Callback method for object detection
+
+        Args:
+            ch (_type_): _description_
+            method (_type_): _description_
+            properties (_type_): _description_
+            body (_type_): _description_
+        """
+        
+        self.detectedObjects = body.decode()
+        #print(self.detectedObjects)
 
     def userCallback(self, ch, method, properties, body):
         """
@@ -89,7 +104,7 @@ class LLMProcessor:
             {"role": "system", "content": f"The webcam currently sees the following objects: {str(self.detectedObjects)}"},
             {"role": "system", "content": f"{str(self.waitDes)}"},
             {"role": "system", "content": f"{str(self.textDes)}"},
-            {"role": "system", "content": f"{str(self.llmDes)}"},
+            #{"role": "system", "content": f"{str(self.llmDes)}"},
             {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands"},
             {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
             {"role": "user", "content": f"{str(question)}"}
@@ -97,43 +112,63 @@ class LLMProcessor:
         )
 
         output = str(completion.choices[0].message.content)
+        print("")
         print(output)
-
-        '''
         
-        lines = output.split("]")
+        lines = [line.strip() for line in output.split("\n")]
 
-        for i in range(len(lines) - 1):
+        for i in range(len(lines)):
 
             message = lines[i].replace("[","").replace("]","")
-            print(message)
-            if "Text" in message:
+            #print(message)
+
+            if message.startswith("TEXT"):
+                #print("text")
+                message = message.split(',', 1)[1]
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body=message)
+            elif message.startswith("WAIT"):
+                #print("wait")
+                message = message.split(", ", 1)[1]
+                
+                try:
+                    time.sleep(float(message))
+                except ValueError:
+                    print("Sleep time unable to be turned into float")
+            elif message.startswith("LLM"):
+                #print("llm")
+                message = message.split(", ", 1)[1]
+                print(message)
+                self.callLLM(message)
+            elif message.startswith("PANTILT"):
+                #print("pan/tilt")
+                self.channel.basic_publish(exchange='', routing_key='cameraInput', body=message)
+            elif message.startswith(('MOVET', 'MOVED', 'TURN')):
+                #print("move")
+                self.channel.basic_publish(exchange='', routing_key='moveInput', body=message)
+
+            '''
+            if "TEXT" in message:
                 transcript = message.split(',', 1)[1]
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body=transcript)
+            elif "WAIT" in message:
+                sleepTime = message.split(", ", 1)[1]
+                
+                try:
+                    time.sleep(float(sleepTime))
+                except ValueError:
+                    print("Sleep time unable to be turned into float")
 
-                print(transcript)
-
-                # generate audio
-                #response = self.client.audio.speech.create(model="tts-1", voice="onyx", input=f"{str(transcript)}",)
-                #response.stream_to_file("response.mp3")
-                #time.sleep(1)
-
-                # plays the response
-                #pygame.mixer.Sound('response.mp3').play()
-            elif "Forward" in message:
-                print("Forward command")
-                message = message.replace(",", "")
-                self.motorController.processMessage(message)
-            elif "Reverse" in message:
+            elif "LLM" in message:
                 print("Reverse command")
                 message = message.replace(",", "")
-                self.motorController.processMessage(message)
+                #self.motorController.processMessage(message)
             elif "Turn" in message:
                 print("Turn command")
                 message = message.replace(",", "")
-                self.motorController.processMessage(message)
+                #self.motorController.processMessage(message)
             else:
                 print("catch all")
-        '''
+            '''
 
 if __name__ == '__main__':
     llmP = LLMProcessor()

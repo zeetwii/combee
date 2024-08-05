@@ -73,8 +73,9 @@ class CameraAI:
                     #print(str(xCenter))
 
                     xAngle = ((xCenter / self.cameraWidth) * self.viewAngle) - (self.viewAngle / 2.0)
+                    xAngle = round(xAngle)
                     #print(f"Name: {str(r.names[int(box.cls[0])])} Angle: {str(xAngle)}")
-                    self.detectedObjects.append(f"{str(r.names[int(box.cls[0])])} : {str(xAngle)}")
+                    self.detectedObjects.append(f"{str(r.names[int(box.cls[0])])}")
 
             #print("")
             #time.sleep(2)
