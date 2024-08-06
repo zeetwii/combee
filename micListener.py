@@ -7,7 +7,7 @@ from openai import OpenAI # needed for calling OpenAI Audio API
 import yaml # needed for config
 import pika # needed to send messages out via RabbitMQ
 import threading # needed for multi threads
-from gpiozero import Button # needed for button control
+from gpiozero import Button, LED # needed for button control
 
 import time # needed for sleep
 
@@ -23,7 +23,9 @@ class MicListener:
 
         self.recordStatus = False # boolean for if the audio is being saved
 
-        self.button = Button("BOARD12")
+        self.led = LED("BOARD8")
+        self.led.off() # just using this to turn the pin into a ground
+        self.button = Button("BOARD10") # the actual button pin
 
         self.queue = queue.Queue()
 

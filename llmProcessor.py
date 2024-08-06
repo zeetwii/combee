@@ -145,30 +145,11 @@ class LLMProcessor:
             elif message.startswith(('MOVET', 'MOVED', 'TURN')):
                 #print("move")
                 self.channel.basic_publish(exchange='', routing_key='moveInput', body=message)
-
-            '''
-            if "TEXT" in message:
-                transcript = message.split(',', 1)[1]
-                self.channel.basic_publish(exchange='', routing_key='audioInput', body=transcript)
-            elif "WAIT" in message:
-                sleepTime = message.split(", ", 1)[1]
-                
-                try:
-                    time.sleep(float(sleepTime))
-                except ValueError:
-                    print("Sleep time unable to be turned into float")
-
-            elif "LLM" in message:
-                print("Reverse command")
-                message = message.replace(",", "")
-                #self.motorController.processMessage(message)
-            elif "Turn" in message:
-                print("Turn command")
-                message = message.replace(",", "")
-                #self.motorController.processMessage(message)
             else:
-                print("catch all")
-            '''
+                print("Error, unknown message generated, possible hallucination.  ")
+                print(f"Message: {str(message)}")
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error, I think you made me generate an incorrect message type.  ")
+
 
 if __name__ == '__main__':
     llmP = LLMProcessor()
