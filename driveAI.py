@@ -1,6 +1,6 @@
 import pika # needed to read messages out via RabbitMQ
 #import threading # needed for multi threads
-#import gpiozero # needed for motor control
+from gpiozero import Motor # needed for motor control
 import time # needed for sleep
 
 class DriveAI:
@@ -17,6 +17,20 @@ class DriveAI:
         Args:
             maxSpeed (int, optional): The max speed to use for the motors, should be between 0 and 1. Defaults to 1.
         """
+        
+        # set up all four motors
+        #self.frontLeft = Motor(forward="BOARD29", backward="BOARD31")
+        #self.backLeft = Motor(forward="BOARD35", backward="BOARD37")
+        self.frontLeft = Motor(forward="BOARD31", backward="BOARD29")
+        self.backLeft = Motor(forward="BOARD37", backward="BOARD35")
+        self.frontRight = Motor(forward="BOARD32", backward="BOARD36")
+        self.backRight = Motor(forward="BOARD38", backward="BOARD40")
+        
+        # set speed to zero
+        self.frontLeft.forward(0)
+        self.backLeft.forward(0)
+        self.frontRight.forward(0)
+        self.backRight.forward(0)
 
         # fix max speed if entered wrong
         while abs(maxSpeed) > 1:
@@ -66,32 +80,33 @@ class DriveAI:
                     self.turn(float(command[1]))
                 except ValueError:
                     print("Error, expected angle value could not turn into a float")
-                    #TODO: make audio message
+                    self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, expected angle value could not turn into a float")
             else:
                 print("Error, unexpected number of of commands")
-                    #TODO: make audio message
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, unexpected number of commands")
         elif command[0].startswith("MOVED"):
             if len(command) == 3:
                 try:
                     self.moveD(float(command[1]), float(command[2]))
                 except ValueError:
                     print("Error, expected values could not turn into a float")
-                    #TODO: make audio message
+                    self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, expected angle value could not turn into a float")
             else:
                 print("Error, unexpected number of of commands")
-                    #TODO: make audio message
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, unexpected number of commands")
         elif command[0].startswith("MOVET"):
             if len(command) == 3:
                 try:
                     self.moveT(float(command[1]), float(command[2]))
                 except ValueError:
                     print("Error, expected values could not turn into a float")
-                    #TODO: make audio message
+                    self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, expected angle value could not turn into a float")
             else:
                 print("Error, unexpected number of of commands")
-                    #TODO: make audio message
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, unexpected number of commands")
         else:
-             print("Error, unexpected command")   
+             print("Error, unexpected command") 
+             self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the navigation AI, unexpected commands")  
 
 
     def turn(self, angle):
@@ -106,22 +121,34 @@ class DriveAI:
 
         if angle > 0: # turn right
             # Left motors forward, right motors reverse
-            frontRight = self.maxSpeed
-            rearLeft = self.maxSpeed
-            frontLeft = self.maxSpeed
-            rearRight = self.maxSpeed
+            self.frontLeft.forward(self.maxSpeed)
+            self.backLeft.forward(self.maxSpeed)
+            self.frontRight.backward(self.maxSpeed)
+            self.backRight.backward(self.maxSpeed)
 
-            time.sleep(turnTime)
             print(f"Turn right for {str(turnTime)} seconds")
+            time.sleep(turnTime)
+
+            # set speed to zero
+            self.frontLeft.forward(0)
+            self.backLeft.forward(0)
+            self.frontRight.forward(0)
+            self.backRight.forward(0)
         else: # turn left
             # Left motors reverse, right motors forward
-            frontRight = self.maxSpeed
-            rearLeft = self.maxSpeed
-            frontLeft = self.maxSpeed
-            rearRight = self.maxSpeed
+            self.frontLeft.backward(self.maxSpeed)
+            self.backLeft.backward(self.maxSpeed)
+            self.frontRight.forward(self.maxSpeed)
+            self.backRight.forward(self.maxSpeed)
 
-            time.sleep(turnTime)
             print(f"Turn left for {str(turnTime)} seconds")
+            time.sleep(turnTime)
+            
+            # set speed to zero
+            self.frontLeft.forward(0)
+            self.backLeft.forward(0)
+            self.frontRight.forward(0)
+            self.backRight.forward(0)
 
 
     def moveD(self, angle, distance):
@@ -197,20 +224,24 @@ class DriveAI:
                     secondary = 0
                 
                 # Reverse
-                frontRight = primary
-                rearLeft = primary
+                #frontRight = primary
+                #rearLeft = primary
+                self.backLeft.backward(primary)
+                self.frontRight.backward(primary)
 
                 # Forward
-                frontLeft = secondary
-                rearRight = secondary
+                #frontLeft = secondary
+                #rearRight = secondary
+                self.frontLeft.forward(secondary)
+                self.backRight.forward(secondary)
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Reverse, 90 to 135: P: {str(primary)} S: {str(secondary)}")
 
@@ -224,18 +255,23 @@ class DriveAI:
                     secondary = 0
                 
                 # Reverse
-                frontRight = primary
-                rearLeft = primary
-                frontLeft = secondary
-                rearRight = secondary
+                self.frontLeft.backward(secondary)
+                self.backLeft.backward(primary)
+                self.frontRight.backward(primary)
+                self.backRight.backward(secondary)
+                
+                #frontRight = primary
+                #rearLeft = primary
+                #frontLeft = secondary
+                #rearRight = secondary
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Reverse, 135 to 180: P: {str(primary)} S: {str(secondary)}")
 
@@ -253,20 +289,24 @@ class DriveAI:
                     secondary = 0
                 
                 # Forward
-                frontRight = secondary
-                rearLeft = secondary
+                #frontRight = secondary
+                #rearLeft = secondary
+                self.backLeft.forward(secondary)
+                self.frontRight.forward(secondary)
 
                 # Reverse
-                frontLeft = primary
-                rearRight = primary
+                #frontLeft = primary
+                #rearRight = primary
+                self.frontLeft.backward(primary)
+                self.backRight.backward(primary)
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Reverse, -90 to -135: P: {str(primary)} S: {str(secondary)}")
 
@@ -280,18 +320,22 @@ class DriveAI:
                     secondary = 0
                 
                 # Reverse
-                frontRight = secondary
-                rearLeft = secondary
-                frontLeft = primary
-                rearRight = primary
+                #frontRight = secondary
+                #rearLeft = secondary
+                #frontLeft = primary
+                #rearRight = primary
+                self.frontLeft.backward(primary)
+                self.backLeft.backward(secondary)
+                self.frontRight.backward(secondary)
+                self.backRight.backward(primary)
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Reverse, -135 to -180: P: {str(primary)} S: {str(secondary)}")
 
@@ -323,18 +367,22 @@ class DriveAI:
                     secondary = 0
 
                 # all forward
-                frontLeft = primary
-                rearRight = primary
-                frontRight = secondary
-                rearLeft = secondary    
+                #frontLeft = primary
+                #rearRight = primary
+                #frontRight = secondary
+                #rearLeft = secondary 
+                self.frontLeft.forward(primary)
+                self.backLeft.forward(secondary)
+                self.frontRight.forward(secondary)
+                self.backRight.forward(primary)   
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Forward, 0 to 45: P: {str(primary)} S: {str(secondary)}")
 
@@ -347,20 +395,24 @@ class DriveAI:
                     secondary = 0
 
                 # primary forward
-                frontLeft = primary
-                rearRight = primary
+                #frontLeft = primary
+                #rearRight = primary
+                self.frontLeft.forward(primary)
+                self.backRight.forward(primary)
 
                 # secondary reverse
-                frontRight = secondary
-                rearLeft = secondary    
+                #frontRight = secondary
+                #rearLeft = secondary
+                self.backLeft.backward(secondary)
+                self.frontRight.backward(secondary)
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Forward, 45 to 90: P: {str(primary)} S: {str(secondary)}")
             else:
@@ -378,20 +430,24 @@ class DriveAI:
                     secondary = 0
 
                 # all forward
-                frontRight = primary
-                rearLeft = primary
-                frontLeft = secondary
-                rearRight = secondary    
+                #frontRight = primary
+                #rearLeft = primary
+                #frontLeft = secondary
+                #rearRight = secondary 
+                self.frontLeft.forward(secondary)
+                self.backLeft.forward(primary)
+                self.frontRight.forward(primary)
+                self.backRight.forward(secondary)   
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
-                print(f"Move Forward, -0 to -45: P: {str(primary)} S: {str(secondary)}")
+                #print(f"Move Forward, -0 to -45: P: {str(primary)} S: {str(secondary)}")
 
             elif angle >= -90: # secondary motors moving in reverse
                 secondary = (secondary * ((abs(angle) - 45) / 45))
@@ -402,20 +458,24 @@ class DriveAI:
                     secondary = 0
 
                 # primary forward
-                frontRight = primary
-                rearLeft = primary
+                #frontRight = primary
+                #rearLeft = primary
+                self.backLeft.forward(primary)
+                self.frontRight.forward(primary)
 
                 # secondary reverse
-                frontRight = secondary
-                rearLeft = secondary    
+                #frontLeft = secondary
+                #rearRight = secondary  
+                self.frontLeft.backward(secondary)
+                self.backRight.backward(secondary)  
 
                 time.sleep(float(runtime))
 
                 # turn all motors off
-                frontLeft = 0
-                rearRight = 0
-                frontRight = 0
-                rearLeft = 0 
+                self.frontLeft.forward(0)
+                self.backLeft.forward(0)
+                self.frontRight.forward(0)
+                self.backRight.forward(0)
 
                 print(f"Move Forward, -45 to -90: P: {str(primary)} S: {str(secondary)}")
             else:

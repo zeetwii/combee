@@ -3,7 +3,7 @@ import cv2 # needed for computer vision processes
 import math # needed for math functions
 import time # needed for sleep
 import pika # needed for RabbitMQ 
-import threading # needed for multi threads
+from threading import Thread # needed for multithreading
 
 class CameraAI:
     """
@@ -22,10 +22,7 @@ class CameraAI:
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         self.channel = self.connection.channel()
 
-        self.channel.queue_declare(queue='cameraOutput')
         self.channel.queue_declare(queue='cameraInput') 
-
-        self.channel.basic_consume(queue='cameraInput', on_message_callback=self.cameraCallback, auto_ack=True)
 
         # model stuff
         self.model = YOLO("./models/yolov10n.pt", verbose=False)
@@ -42,7 +39,20 @@ class CameraAI:
         self.cameraHeight = 480
         self.viewAngle = 90
 
+
+    def startListening(self):
+        """
+        Begin processing RabbitMQ messages.  
+        """
+
+        print("Beginning RabbitMQ listener")
+        self.channel.start_consuming()
+
+
     def comptuerVisionThread(self):
+        """
+        Begins looking for objects in webcam - blocking thread
+        """
 
         print("starting computer vision thread")
 
@@ -79,6 +89,30 @@ class CameraAI:
 
             #print("")
             #time.sleep(2)
+    def panTilt(self, panAngle, tiltAngle):
+        """
+        method to adjust the pan and tilt system the camera is on
+
+        Args:
+            panAngle (int): the angle to look left or right relative to straight ahead
+            tiltAngle (int): the angle to look up or down relative to straight ahead
+        """
+
+        actualPanAngle = 90 + int(panAngle) # 90 degrees is our center
+        actualTiltAngle = 90 + int(tiltAngle)
+
+        if actualPanAngle < 0: # if less than min angle 
+            actualPanAngle = 0
+        elif actualPanAngle > 180: # if greater than max angle
+            actualPanAngle = 180
+
+        if actualTiltAngle < self.minTiltAngle: # if less than min angle 
+            actualTiltAngle = self.minTiltAngle
+        elif actualTiltAngle > self.maxTiltAngle: # if greater than max angle
+            actualTiltAngle = self.maxTiltAngle
+
+        self.panServo.angle = actualPanAngle
+        self.tiltServo.angle = actualTiltAngle
 
     def cameraCallback(self, ch, method, properties, body):
         """
@@ -91,11 +125,26 @@ class CameraAI:
             body (str): message from the user
         """
         
-        command = body.decode()
-        print(command)
+        message = body.decode()
+        print(message)
+        command = str(message).split(', ')
+
+        if command[0].startswith("PANTILT"):
+            if len(command) == 3: # the expected length
+                try:
+                    self.moveD(int(command[1]), int(command[2]))
+                except ValueError:
+                    print("Error, expected values could not turn into a int")
+                    self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the Camera AI, expected angle value could not turn into an int")
+            else:
+                print("Error, unexpected number of of commands")
+                self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error from the Camera AI, unexpected number of commands")
+
+
 
 if __name__ == "__main__":
     print("Running Computer Vision system")
 
     cameraAI = CameraAI(cameraSelect=0)
+    #cameraAI.startListening()
     cameraAI.comptuerVisionThread()

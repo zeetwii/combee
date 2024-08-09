@@ -105,7 +105,7 @@ class LLMProcessor:
             {"role": "system", "content": f"{str(self.waitDes)}"},
             {"role": "system", "content": f"{str(self.textDes)}"},
             #{"role": "system", "content": f"{str(self.llmDes)}"},
-            {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands"},
+            {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided to you.  "},
             {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
             {"role": "user", "content": f"{str(question)}"}
         ]
