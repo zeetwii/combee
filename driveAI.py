@@ -40,8 +40,8 @@ class DriveAI:
         self.maxSpeed = maxSpeed
 
         #TODO Change these to pull from a yaml config
-        self.turnRate = 120.0 # turn 120 degrees a second
-        self.moveRate = 1.0 # move 1 foot a second
+        self.turnRate = 70.0 # turn 120 degrees a second
+        self.moveRate = 1.1667 # move 14 in a second
 
         # set up RabbitMQ
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))

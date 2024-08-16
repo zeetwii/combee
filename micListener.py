@@ -41,7 +41,7 @@ class MicListener:
         self.client = OpenAI(api_key=config["openai"]["API_KEY"])
 
         # set up RabbitMQ
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', heartbeat=3600)) # increase heartbeat to deal with weird dropouts
         self.channel = self.connection.channel()
 
         self.channel.queue_declare(queue='userOutput') 
@@ -59,10 +59,19 @@ class MicListener:
         Returns:
             str: The text representing all speech recorded by the audio file
         """
-        audio_file = open("request.wav", "rb")
-        transcript = self.client.audio.transcriptions.create(model="whisper-1", file=audio_file, response_format="text")
 
-        return str(transcript)
+        # check the file size to make sure audio file is long enough
+        f = sf.SoundFile("request.wav")
+
+        #print(f"Runtime = {str(f.frames / f.samplerate)}")
+
+        if (f.frames / f.samplerate) > 0.1:
+            audio_file = open("request.wav", "rb")
+            transcript = self.client.audio.transcriptions.create(model="whisper-1", file=audio_file, response_format="text")
+
+            return str(transcript)
+        else:
+            return "Error, recording was too short"
     
     def piListener(self):
         """
@@ -106,6 +115,9 @@ if __name__ == "__main__":
 
         micListener.piListener()
         text = micListener.transcribeAudio()
-        micListener.publishText(text=text)
+        if not text.startswith("Error"):
+            micListener.publishText(text=text)
+        else:
+            print(text)
         #print(text)
         #micListener.callLLM(text)

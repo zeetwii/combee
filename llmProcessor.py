@@ -121,34 +121,34 @@ class LLMProcessor:
 
             message = lines[i].replace("[","").replace("]","")
             #print(message)
-
-            if message.startswith("TEXT"):
-                #print("text")
-                message = message.split(',', 1)[1]
-                self.channel.basic_publish(exchange='', routing_key='audioInput', body=message)
-            elif message.startswith("WAIT"):
-                #print("wait")
-                message = message.split(", ", 1)[1]
-                
-                try:
-                    time.sleep(float(message))
-                except ValueError:
-                    print("Sleep time unable to be turned into float")
-            elif message.startswith("LLM"):
-                #print("llm")
-                message = message.split(", ", 1)[1]
-                print(message)
-                self.callLLM(message)
-            elif message.startswith("PANTILT"):
-                #print("pan/tilt")
-                self.channel.basic_publish(exchange='', routing_key='cameraInput', body=message)
-            elif message.startswith(('MOVET', 'MOVED', 'TURN')):
-                #print("move")
-                self.channel.basic_publish(exchange='', routing_key='moveInput', body=message)
-            else:
-                print("Error, unknown message generated, possible hallucination.  ")
-                print(f"Message: {str(message)}")
-                self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error, I think you made me generate an incorrect message type.  ")
+            if len(message) > 0: # make sure line isn't empty
+                if message.startswith("TEXT"):
+                    #print("text")
+                    message = message.split(',', 1)[1]
+                    self.channel.basic_publish(exchange='', routing_key='audioInput', body=message)
+                elif message.startswith("WAIT"):
+                    #print("wait")
+                    message = message.split(", ", 1)[1]
+                    
+                    try:
+                        time.sleep(float(message))
+                    except ValueError:
+                        print("Sleep time unable to be turned into float")
+                elif message.startswith("LLM"):
+                    #print("llm")
+                    message = message.split(", ", 1)[1]
+                    print(message)
+                    self.callLLM(message)
+                elif message.startswith("PANTILT"):
+                    #print("pan/tilt")
+                    self.channel.basic_publish(exchange='', routing_key='cameraInput', body=message)
+                elif message.startswith(('MOVET', 'MOVED', 'TURN')):
+                    #print("move")
+                    self.channel.basic_publish(exchange='', routing_key='moveInput', body=message)
+                else:
+                    print("Error, unknown message generated, possible hallucination.  ")
+                    print(f"Message: {str(message)}")
+                    self.channel.basic_publish(exchange='', routing_key='audioInput', body="Error, I think you made me generate an incorrect message type.  ")
 
 
 if __name__ == '__main__':
