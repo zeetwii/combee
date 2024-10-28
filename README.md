@@ -4,7 +4,7 @@
 
 Combee is a proof of concept framework for safely integrating Large Language Models (LLMs) into physical systems.  It's also a fun little robot you can talk to, and yes it is named after the pokemon.  
 
-It's designed to show how you can securely use multiple AI models together to add multimodal capabilities to otherwise dumb systems.  
+It's designed to show how you can securely use multiple AI models together to add multimodal capabilities to otherwise dumb systems.  If you want to build your own, check out [the build guide here](./buildGuide.md).  
 
 ## Background and Terms
 
