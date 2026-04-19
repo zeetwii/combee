@@ -59,7 +59,7 @@ class AudioResponse:
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)  # 16-bit audio
             wav_file.setframerate(self.voice.config.sample_rate)
-            self.voice.synthesize(str(text), wav_file)
+            self.voice.synthesize_wav(str(text), wav_file)
 
         # plays the response and waits for it to finish
         subprocess.run(['aplay', 'response.wav'], check=True)
