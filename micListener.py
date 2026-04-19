@@ -1,14 +1,11 @@
-import sounddevice as sd # needed to control the microphone
-import soundfile as sf # needed to create the audio files
-#import numpy # needed to create the numpy array of the wav files
-import queue # needed for making the queue that handles real time audio
-import sys # needed for file status
-from openai import OpenAI # needed for calling OpenAI Audio API
-import yaml # needed for config
-import pika # needed to send messages out via RabbitMQ
-import threading # needed for multi threads
-from gpiozero import Button, LED # needed for button control
-
+import sounddevice as sd # needed to record audio from the microphone
+import soundfile as sf # needed to save the recorded audio to a wav file
+import queue # needed to create a queue for recording audio from the microphone in real time
+import sys # needed for printing errors to stderr
+from pywhispercpp.model import Model # needed for speech to text
+import pika # needed for RabbitMQ interactions
+import threading # needed for multithreading
+from gpiozero import Button, LED # needed for button and LED interactions
 import time # needed for sleep
 
 class MicListener:
@@ -33,12 +30,7 @@ class MicListener:
         self.deviceInfo = sd.query_devices(kind='input')
         #print(str(self.deviceInfo))
 
-        # load config settings
-        with open("./configs/billing.yaml", "r") as ymlfile:
-            config = yaml.safe_load(ymlfile)
-
-        # load openAI keys into client
-        self.client = OpenAI(api_key=config["openai"]["API_KEY"])
+        self.model = Model('base.en')
 
         # set up RabbitMQ
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', heartbeat=3600)) # increase heartbeat to deal with weird dropouts
@@ -66,10 +58,8 @@ class MicListener:
         #print(f"Runtime = {str(f.frames / f.samplerate)}")
 
         if (f.frames / f.samplerate) > 0.1:
-            audio_file = open("request.wav", "rb")
-            transcript = self.client.audio.transcriptions.create(model="whisper-1", file=audio_file, response_format="text")
-
-            return str(transcript)
+            segments = self.model.transcribe("request.wav")
+            return " ".join(s.text for s in segments).strip()
         else:
             return "Error, recording was too short"
     
@@ -120,4 +110,3 @@ if __name__ == "__main__":
         else:
             print(text)
         #print(text)
-        #micListener.callLLM(text)

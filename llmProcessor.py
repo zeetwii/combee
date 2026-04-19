@@ -1,4 +1,4 @@
-from openai import OpenAI # needed for calling OpenAI Audio API
+import ollama # needed to interact with the ollama API
 import yaml # needed for config
 import pika # needed to send messages out via RabbitMQ
 import time # needed for sleep
@@ -16,13 +16,6 @@ class LLMProcessor:
 
         # String that will contain all the detected objects and their positions relative to us
         self.detectedObjects = ""
-
-        # load config settings
-        with open("./configs/billing.yaml", "r") as ymlfile:
-            config = yaml.safe_load(ymlfile)
-
-        # load openAI keys into client
-        self.client = OpenAI(api_key=config["openai"]["API_KEY"])
 
         # load context settings
         with open("./configs/context.yaml", "r") as ctxfile:
@@ -95,23 +88,23 @@ class LLMProcessor:
         
         movementString = ""
 
-        completion = self.client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": f"{str(self.personality)}"},
-            {"role": "system", "content": f"{str(self.moveDes)}"},
-            {"role": "system", "content": f"{str(self.lookDes)}"},
-            {"role": "system", "content": f"The webcam currently sees the following objects: {str(self.detectedObjects)}"},
-            {"role": "system", "content": f"{str(self.waitDes)}"},
-            {"role": "system", "content": f"{str(self.textDes)}"},
-            #{"role": "system", "content": f"{str(self.llmDes)}"},
-            {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided to you.  "},
-            {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
-            {"role": "user", "content": f"{str(question)}"}
-        ]
+        completion = ollama.chat(
+            model="llama3.2:1b",
+            messages=[
+                {"role": "system", "content": f"{str(self.personality)}"},
+                {"role": "system", "content": f"{str(self.moveDes)}"},
+                {"role": "system", "content": f"{str(self.lookDes)}"},
+                {"role": "system", "content": f"The webcam currently sees the following objects: {str(self.detectedObjects)}"},
+                {"role": "system", "content": f"{str(self.waitDes)}"},
+                {"role": "system", "content": f"{str(self.textDes)}"},
+                #{"role": "system", "content": f"{str(self.llmDes)}"},
+                {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided to you.  "},
+                {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
+                {"role": "user", "content": f"{str(question)}"}
+            ]
         )
 
-        output = str(completion.choices[0].message.content)
+        output = str(completion.message.content)
         print("")
         print(output)
         

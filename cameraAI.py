@@ -25,7 +25,7 @@ class CameraAI:
         self.channel.queue_declare(queue='cameraInput') 
 
         # model stuff
-        self.model = YOLO("./models/yolov10n.pt", verbose=False)
+        self.model = YOLO("./models/yolov26n.pt", verbose=False)
         self.detectedObjects = []
 
         self.cameraSelect = cameraSelect
