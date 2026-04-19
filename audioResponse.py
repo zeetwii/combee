@@ -1,9 +1,7 @@
 import wave
+import subprocess
 import pika # needed to send messages out via RabbitMQ
 from piper.voice import PiperVoice
-
-import pygame # needed for audio
-pygame.init()
 
 class AudioResponse:
     """
@@ -63,13 +61,8 @@ class AudioResponse:
             wav_file.setframerate(self.voice.config.sample_rate)
             self.voice.synthesize(str(text), wav_file)
 
-        # plays the response (keep reference to Sound to prevent premature GC)
-        sound = pygame.mixer.Sound('response.wav')
-        channel = sound.play()
-
-        # wait for file to finish playing
-        while channel.get_busy():
-            pygame.time.wait(100) # wait 100 ms
+        # plays the response and waits for it to finish
+        subprocess.run(['aplay', 'response.wav'], check=True)
 
 if __name__ == '__main__':
     audioResp = AudioResponse()
