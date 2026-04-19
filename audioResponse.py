@@ -63,8 +63,9 @@ class AudioResponse:
             wav_file.setframerate(self.voice.config.sample_rate)
             self.voice.synthesize(str(text), wav_file)
 
-        # plays the response
-        channel = pygame.mixer.Sound('response.wav').play()
+        # plays the response (keep reference to Sound to prevent premature GC)
+        sound = pygame.mixer.Sound('response.wav')
+        channel = sound.play()
 
         # wait for file to finish playing
         while channel.get_busy():

@@ -48,7 +48,7 @@ class LLMProcessor:
             ]
         
         # load the ollama model for generating responses and set it to not timeout
-        response = ollama.chat(model="llama3.2:3b", messages=messages, keep_alive=-1)
+        response = ollama.chat(model="llama3.2:1b", messages=messages, keep_alive=-1)
         print(response.message.content)
 
         self.channel.basic_consume(queue='userOutput', on_message_callback=self.userCallback, auto_ack=True)
@@ -99,8 +99,10 @@ class LLMProcessor:
         
         movementString = ""
 
+        print("Sending question to LLM")
+
         completion = ollama.chat(
-            model="llama3.2:3b",
+            model="llama3.2:1b",
             messages=[
                 {"role": "system", "content": f"{str(self.personality)}"},
                 {"role": "system", "content": f"{str(self.moveDes)}"},
@@ -109,7 +111,7 @@ class LLMProcessor:
                 {"role": "system", "content": f"{str(self.waitDes)}"},
                 {"role": "system", "content": f"{str(self.textDes)}"},
                 #{"role": "system", "content": f"{str(self.llmDes)}"},
-                {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided to you.  Every command must be in brackets with the command type followed by a comma and then the command content.  For example, if I wanted you to say 'hello' you would respond with: [TEXT, hello].  If I wanted you to wait for 5 seconds, you would respond with: [WAIT, 5].  If you do not understand the question or do not know how to answer the question with the provided commands, respond with [TEXT, Sorry, I don't understand the question]"},
+                {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided in the context.  Every command must be in brackets with the command type followed by a comma and then the command content.  For example, if I wanted you to say 'hello' you would respond with: [TEXT, hello].  If I wanted you to wait for 5 seconds, you would respond with: [WAIT, 5].  If you do not understand the question or do not know how to answer the question with the provided commands, respond with [TEXT, Sorry, I don't understand the question]"},
                 {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
                 {"role": "user", "content": f"{str(question)}"}
             ], keep_alive=-1

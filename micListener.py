@@ -30,7 +30,7 @@ class MicListener:
         self.deviceInfo = sd.query_devices(kind='input')
         #print(str(self.deviceInfo))
 
-        self.model = Model('base.en')
+        self.model = Model('tiny.en')
 
         # set up RabbitMQ
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', heartbeat=3600)) # increase heartbeat to deal with weird dropouts
