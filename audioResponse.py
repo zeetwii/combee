@@ -58,6 +58,9 @@ class AudioResponse:
 
         # generate audio via Piper TTS
         with wave.open("response.wav", "wb") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)  # 16-bit audio
+            wav_file.setframerate(self.voice.config.sample_rate)
             self.voice.synthesize(str(text), wav_file)
 
         # plays the response
