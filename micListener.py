@@ -30,7 +30,7 @@ class MicListener:
         self.deviceInfo = sd.query_devices(kind='input')
         #print(str(self.deviceInfo))
 
-        self.model = Model('base.en')
+        self.model = Model('tiny.en')
 
         # set up RabbitMQ
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', heartbeat=3600)) # increase heartbeat to deal with weird dropouts
@@ -70,7 +70,7 @@ class MicListener:
         
         print("press button to record")
         
-        sampleRate = int(self.deviceInfo['default_samplerate'])
+        sampleRate = 16000
         with sf.SoundFile(file="request.wav", mode='w', samplerate=sampleRate, channels=1, subtype='PCM_16') as file:
             with sd.InputStream(samplerate=sampleRate, channels=1, callback=self.callback):
                 while True:
