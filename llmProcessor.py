@@ -1,4 +1,4 @@
-from openai import OpenAI # needed for calling OpenAI Audio API
+from groq import Groq
 import yaml # needed for config
 import pika # needed to send messages out via RabbitMQ
 import time # needed for sleep
@@ -17,16 +17,14 @@ class LLMProcessor:
         # String that will contain all the detected objects and their positions relative to us
         self.detectedObjects = ""
 
-        # load config settings
-        with open("./configs/billing.yaml", "r") as ymlfile:
-            config = yaml.safe_load(ymlfile)
-
-        # load openAI keys into client
-        self.client = OpenAI(api_key=config["openai"]["API_KEY"])
-
         # load context settings
         with open("./configs/context.yaml", "r") as ctxfile:
             context = yaml.safe_load(ctxfile)
+
+        with open("./configs/billing.yaml", "r") as billingfile:
+            billing = yaml.safe_load(billingfile)
+
+        self.client = Groq(api_key=billing["groq"]["API_KEY"])
 
         self.personality = context["llm"]["PERSONALITY"]
         self.moveDes = context["llm"]["MOVE_DESCRIPTION"]
@@ -46,6 +44,16 @@ class LLMProcessor:
         self.channel.queue_declare(queue='cameraInput')
         self.channel.queue_declare(queue='audioInput')
         self.channel.queue_declare(queue='moveInput')
+
+        messages = [
+            {
+                'role': 'user',
+                'content': 'Say that you are ready to go.  ',
+            },
+            ]
+        
+        response = self.client.chat.completions.create(model="llama-3.3-70b-versatile", messages=messages)
+        print(response.choices[0].message.content)
 
         self.channel.basic_consume(queue='userOutput', on_message_callback=self.userCallback, auto_ack=True)
         self.channel.basic_consume(queue='cameraOutput', on_message_callback=self.cameraCallback, auto_ack=True)
@@ -95,20 +103,22 @@ class LLMProcessor:
         
         movementString = ""
 
+        print("Sending question to LLM")
+
         completion = self.client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": f"{str(self.personality)}"},
-            {"role": "system", "content": f"{str(self.moveDes)}"},
-            {"role": "system", "content": f"{str(self.lookDes)}"},
-            {"role": "system", "content": f"The webcam currently sees the following objects: {str(self.detectedObjects)}"},
-            {"role": "system", "content": f"{str(self.waitDes)}"},
-            {"role": "system", "content": f"{str(self.textDes)}"},
-            #{"role": "system", "content": f"{str(self.llmDes)}"},
-            {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided to you.  "},
-            {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
-            {"role": "user", "content": f"{str(question)}"}
-        ]
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": f"{str(self.personality)}"},
+                {"role": "system", "content": f"{str(self.moveDes)}"},
+                {"role": "system", "content": f"{str(self.lookDes)}"},
+                {"role": "system", "content": f"The webcam currently sees the following objects: {str(self.detectedObjects)}"},
+                {"role": "system", "content": f"{str(self.waitDes)}"},
+                {"role": "system", "content": f"{str(self.textDes)}"},
+                #{"role": "system", "content": f"{str(self.llmDes)}"},
+                {"role": "system", "content": "You may combine and chain commands together however each command must be on a new line, and only one command is allowed per line.  The command should be the only thing on the line, nothing else.  Do not respond with anything other than commands, and do not abbreviate or title the commands anything other than what has been provided in the context.  Every command must be in brackets with the command type followed by a comma and then the command content.  For example, if I wanted you to say 'hello' you would respond with: [TEXT, hello].  If I wanted you to wait for 5 seconds, you would respond with: [WAIT, 5].  If you do not understand the question or do not know how to answer the question with the provided commands, respond with [TEXT, Sorry, I don't understand the question]"},
+                {"role": "system", "content": "Using this sensor data and formatting instructions, try to answer the following question from the user."},
+                {"role": "user", "content": f"{str(question)}"}
+            ]
         )
 
         output = str(completion.choices[0].message.content)
